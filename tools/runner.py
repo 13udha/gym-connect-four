@@ -120,7 +120,7 @@ def tournament(players: List[Player], save_models: bool = False):
                 continue
             game_list.append((player1, player2))
 
-    random.shuffle(game_list)
+    # random.shuffle(game_list)
 
     for player1, player2 in game_list:
         score = play_competition_game(player1, player2, board_generator())
@@ -148,7 +148,7 @@ def tournament(players: List[Player], save_models: bool = False):
 
     if save_models:
         for player in players:
-            player.save_model()
+            player.save_model(f"{player.name}-runner")
 
 
 def main():
@@ -171,6 +171,6 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
+    main()
     # Next line is to run tournament with customized Random players
-    tournament([RandomPlayer(env, name="R1", seed=0), RandomPlayer(env, name="R2", seed=None), SavedPlayer(env, "NNPlayer")])
+    # tournament([RandomPlayer(env, name="R1", seed=0), RandomPlayer(env, name="R2", seed=None), SavedPlayer(env, "NNPlayer")])

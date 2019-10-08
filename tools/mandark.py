@@ -33,17 +33,16 @@ import numpy as np
 import pandas as pd
 from plotly import graph_objects as go
 
-SCORES_CSV_PATH = "./scores/scores.csv"
-SCORES_PNG_PATH = "./scores/scores.png"
-SOLVED_CSV_PATH = "./scores/solved.csv"
-SOLVED_PNG_PATH = "./scores/solved.png"
+SCORES_CSV_PATH = "./scores-mandark/scores.csv"
+SCORES_PNG_PATH = "./scores-mandark/scores.png"
+SOLVED_CSV_PATH = "./scores-mandark/solved.csv"
+SOLVED_PNG_PATH = "./scores-mandark/solved.png"
 AVERAGE_SCORE_TO_SOLVE = 195
 CONSECUTIVE_RUNS_TO_SOLVE = 200
 PLOT_REFRESH = 50
 
 
 class ScoreLogger:
-
     def __init__(self, env_name, success_rounds=20):
         self.scores = deque(maxlen=CONSECUTIVE_RUNS_TO_SOLVE)
         self.averages = deque(maxlen=CONSECUTIVE_RUNS_TO_SOLVE)
@@ -234,9 +233,9 @@ class DQNSolver:
         self.model.save(f"{file_prefix}.h5")
 
 
-class NNPlayer(Player):
-    def __init__(self, env, name='RandomPlayer'):
-        super(NNPlayer, self).__init__(env, name)
+class Mandark(Player):
+    def __init__(self, env, name='Mandark'):
+        super(Mandark, self).__init__(env, name)
 
         self.observation_space = env.observation_space.shape
         self.action_space = env.action_space.n
@@ -251,6 +250,10 @@ class NNPlayer(Player):
         self._score = 0
         self._total_score = 0
         self._max_avg_score = -100
+
+        self.train_set_name = f"mandark_train{random.randint(1, 999)}.csv"
+        print(f"Training set : {self.train_set_name}")
+        self.train_set = open(self.train_set_name, "a+")
 
     def get_next_action(self, state: np.ndarray) -> int:
         state = np.reshape(state, [1] + list(self.observation_space))
@@ -269,6 +272,10 @@ class NNPlayer(Player):
         return avg >= self._STOP_THRESHOLD
 
     def learn(self, state, action, state_next, reward, done) -> None:
+        self.train_set.write(' '.join(map(str, state.reshape(42))) + f",{action},{reward}\n")
+        if done:
+            self.train_set.flush()
+
         if self._stop_learn_condition():
             print(f"Stopping learning as got {mean(self._last_N_rounds)} avg on last{self._N}. Saving model & exiting")
             self.save_model()
@@ -287,8 +294,14 @@ class NNPlayer(Player):
             self.sl.add_score(int(reward), self._round, self.dqn_solver.exploration_rate, len(self.dqn_solver.memory),
                               refresh=self._round % PLOT_REFRESH == 0)
 
-    def save_model(self):
-        self.dqn_solver.save_model(self.name)
+    def save_model(self, model_prefix: str = None):
+        if model_prefix:
+            self.dqn_solver.save_model(model_prefix)
+        else:
+            self.dqn_solver.save_model(self.name)
+
+    def reset(self, episode: int = 0, side: int = 1) -> None:
+        self.train_set.write("NEW ROUND\n")
 
 
 def game(show_boards=False):

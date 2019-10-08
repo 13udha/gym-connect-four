@@ -133,10 +133,9 @@ class Cnn(Player):
 
     def save_model(self, model_prefix: str = None):
         if model_prefix:
-            self.dqn_solver.save_model(f"{model_prefix}.h5")
+            self.dqn_solver.save_model(model_prefix)
         else:
             self.dqn_solver.save_model(self.name)
-
 
     def reset(self, episode: int = 0, side: int = 1) -> None:
         self.train_set.write("NEW ROUND\n")
