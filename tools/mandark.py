@@ -261,14 +261,18 @@ class Mandark(Player):
         self._total_score = 0
         self._max_avg_score = -100
 
-        self.LEARNING = True
+        self.LEARNING = False
         self.LOGGING = False
         self.CONTINUE_TRAINING = True
 
         if self.CONTINUE_TRAINING:
             if os.path.exists(f"{self.name.capitalize()}.h5"):
                 self.dqn_solver.load_model(f"{self.name.capitalize()}.h5")
-                self.dqn_solver.exploration_rate = self.dqn_solver.EXPLORATION_MIN
+                if self.LEARNING:
+                    self.dqn_solver.exploration_rate = self.dqn_solver.EXPLORATION_MIN
+                else:
+                    self.dqn_solver.exploration_rate = 0
+
 
         if self.LOGGING:
             self.train_set_name = f"{self.name}_train{random.randint(1, 999)}.csv"
