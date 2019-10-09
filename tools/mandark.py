@@ -2,6 +2,8 @@ import os
 from operator import itemgetter
 
 # Comment next line to run on GPU. With this configuration, it looks to run faster on CPU i7-8650U
+from keras.engine.saving import load_model
+
 os.environ['CUDA_VISIBLE_D5EVICES'] = '-1'
 
 import random
@@ -232,6 +234,14 @@ class DQNSolver:
     def save_model(self, file_prefix: str):
         self.model.save(f"{file_prefix}.h5")
 
+    def load_model(self, model: str):
+        self.model = load_model(model)
+        self.EXPLORATION_MAX = self.EXPLORATION_MIN
+
+    def teach(self, state: np.ndarray, action: int, reward: float) -> None:
+        q_values = self.model.predict(state)
+        q_values[0][action] += reward
+        self.model.fit(state, q_values, verbose=0)
 
 class Mandark(Player):
     def __init__(self, env, name='Mandark'):
@@ -251,9 +261,19 @@ class Mandark(Player):
         self._total_score = 0
         self._max_avg_score = -100
 
-        self.train_set_name = f"mandark_train{random.randint(1, 999)}.csv"
-        print(f"Training set : {self.train_set_name}")
-        self.train_set = open(self.train_set_name, "a+")
+        self.LEARNING = True
+        self.LOGGING = False
+        self.CONTINUE_TRAINING = True
+
+        if self.CONTINUE_TRAINING:
+            if os.path.exists(f"{self.name.capitalize()}.h5"):
+                self.dqn_solver.load_model(f"{self.name.capitalize()}.h5")
+                self.dqn_solver.exploration_rate = self.dqn_solver.EXPLORATION_MIN
+
+        if self.LOGGING:
+            self.train_set_name = f"{self.name}_train{random.randint(1, 999)}.csv"
+            print(f"Training set : {self.train_set_name}")
+            self.train_set = open(self.train_set_name, "a+")
 
     def get_next_action(self, state: np.ndarray) -> int:
         state = np.reshape(state, [1] + list(self.observation_space))
@@ -272,9 +292,13 @@ class Mandark(Player):
         return avg >= self._STOP_THRESHOLD
 
     def learn(self, state, action, state_next, reward, done) -> None:
-        self.train_set.write(' '.join(map(str, state.reshape(42))) + f",{action},{reward}\n")
-        if done:
-            self.train_set.flush()
+        if self.LOGGING:
+            self.train_set.write(' '.join(map(str, state.reshape(42))) + f",{action},{reward}\n")
+            if done:
+                self.train_set.flush()
+
+        if not self.LEARNING:
+            return
 
         if self._stop_learn_condition():
             print(f"Stopping learning as got {mean(self._last_N_rounds)} avg on last{self._N}. Saving model & exiting")
@@ -295,14 +319,20 @@ class Mandark(Player):
                               refresh=self._round % PLOT_REFRESH == 0)
 
     def save_model(self, model_prefix: str = None):
+        if not self.LEARNING:
+            return
+
         if model_prefix:
             self.dqn_solver.save_model(model_prefix)
         else:
             self.dqn_solver.save_model(self.name)
 
     def reset(self, episode: int = 0, side: int = 1) -> None:
-        self.train_set.write("NEW ROUND\n")
+        if self.LOGGING:
+            self.train_set.write("NEW ROUND\n")
 
+    def teach(self, state: np.ndarray, action: int, reward: float) -> None:
+        self.dqn_solver.teach(state, action, reward)
 
 def game(show_boards=False):
     env: ConnectFourEnv = gym.make(ENV_NAME)
