@@ -261,9 +261,9 @@ class Mandark(Player):
         self._total_score = 0
         self._max_avg_score = -100
 
-        self.LEARNING = True
+        self.LEARNING = False
         self.LOGGING = False
-        self.CONTINUE_TRAINING = False
+        self.CONTINUE_TRAINING = True
 
         if self.CONTINUE_TRAINING:
             if os.path.exists(f"{self.name.capitalize()}.h5"):

@@ -11,7 +11,7 @@ class Minmax(Player):
     def __init__(self, env, name='RandomPlayer'):
         super(Minmax, self).__init__(env, name)
 
-        self.LOGGING = True
+        self.LOGGING = False
 
         self.side = -1
         self.ROW_COUNT = self.env.board_shape[0]
