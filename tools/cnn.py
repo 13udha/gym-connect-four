@@ -118,7 +118,6 @@ class Cnn(Player):
                 else:
                     self.dqn_solver.exploration_rate = 0
 
-
         if self.LOGGING:
             self.train_set_name = f"cnn_train{random.randint(1, 999)}.csv"
             print(f"Training set : {self.train_set_name}")
@@ -130,6 +129,8 @@ class Cnn(Player):
             action = self.dqn_solver.act(state, self.env.available_moves())
             if self.env.is_valid_action(action):
                 return action
+
+        return random.choice(list(self.env.available_moves()))
         raise Exception('Unable to determine a valid move! Maybe invoke at the wrong time?')
 
     def learn(self, state, action, state_next, reward, done) -> None:
