@@ -57,9 +57,11 @@ class Mandarkcomp(Player):
             if self.env.is_valid_action(action):
                 return action
 
-        raise Exception(
-            'Unable to determine a valid move! Maybe invoke at the wrong time?'
-        )
+        return random.choice(list(self.env.available_moves()))
+        #
+        # raise Exception(
+        #     'Unable to determine a valid move! Maybe invoke at the wrong time?'
+        # )
 
     def save_model(self, model_prefix: str = None):
         pass
