@@ -189,8 +189,8 @@ class DQNSolver:
         self.model = Sequential()
         self.model.add(Flatten(input_shape=observation_space))
         self.model.add(Dense(obs_space_card * 2, activation="relu"))
-        self.model.add(Dense(obs_space_card * 2, activation="relu"))
-        self.model.add(Dense(obs_space_card * 2, activation="relu"))
+        self.model.add(Dense(obs_space_card * 8, activation="relu"))
+        self.model.add(Dense(obs_space_card * 4, activation="relu"))
         self.model.add(Dense(obs_space_card * 2, activation="relu"))
         self.model.add(Dense(self.action_space, activation="linear"))
         self.model.compile(loss="mse", optimizer=Adam(lr=self.LEARNING_RATE))
@@ -261,9 +261,9 @@ class Mandark(Player):
         self._total_score = 0
         self._max_avg_score = -100
 
-        self.LEARNING = False
+        self.LEARNING = True
         self.LOGGING = False
-        self.CONTINUE_TRAINING = True
+        self.CONTINUE_TRAINING = False
 
         if self.CONTINUE_TRAINING:
             if os.path.exists(f"{self.name.capitalize()}.h5"):
@@ -272,7 +272,6 @@ class Mandark(Player):
                     self.dqn_solver.exploration_rate = self.dqn_solver.EXPLORATION_MIN
                 else:
                     self.dqn_solver.exploration_rate = 0
-
 
         if self.LOGGING:
             self.train_set_name = f"{self.name}_train{random.randint(1, 999)}.csv"
