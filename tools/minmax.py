@@ -10,6 +10,9 @@ class Minmax(Player):
 
     def __init__(self, env, name='RandomPlayer'):
         super(Minmax, self).__init__(env, name)
+
+        self.LOGGING = True
+
         self.side = -1
         self.ROW_COUNT = self.env.board_shape[0]
         self.COLUMN_COUNT = self.env.board_shape[1]
@@ -17,11 +20,16 @@ class Minmax(Player):
         self.AI_PIECE = 2
         self.WINDOW_LENGTH = 4
         self.EMPTY = 0
-        self.train_set = open("train.csv", "a+")
         self.MINMAX_DEPTH = 3
+        if self.LOGGING:
+            self.train_set_name = f"minmax_train{random.randint(1, 999)}.csv"
+            print(f"Training set : {self.train_set_name}")
+            self.train_set = open(self.train_set_name, "a+")
 
     def reset(self, episode: int = 0, side: int = 1) -> None:
-        self.train_set.write("NEW ROUND\n")
+        if self.LOGGING:
+            self.train_set.write("NEW ROUND\n")
+
         self.side = side
         if self.side == 1:
             self.PLAYER_PIECE = 2
@@ -38,10 +46,10 @@ class Minmax(Player):
         raise Exception('Unable to determine a valid move!')
 
     def learn(self, state, action: int, state_next, reward: int, done: bool) -> None:
-        self.train_set.write(' '.join(map(str, state.reshape(42))) + f",{action},{reward}\n")
-        if done:
-            self.train_set.flush()
-        pass
+        if self.LOGGING:
+            self.train_set.write(' '.join(map(str, state.reshape(42))) + f",{action},{reward}\n")
+            if done:
+                self.train_set.flush()
 
     def _transform_state(self, state):
         board = np.flip(np.copy(state), 0)
