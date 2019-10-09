@@ -16,7 +16,6 @@ from keras.optimizers import Adam
 ENV_NAME = "ConnectFour-v0"
 TRAIN_EPISODES = 1000
 
-
 class DQNSolver:
     """
     Vanilla Multi Layer Perceptron version
@@ -92,22 +91,34 @@ class DQNSolver:
         self.model = load_model(model)
         self.EXPLORATION_MAX = self.EXPLORATION_MIN
 
+    def teach(self, state: np.ndarray, action: int, reward: float) -> None:
+        q_values = self.model.predict(state.reshape(1, 6, 7, 1))
+        q_values[0][action] += reward
+        self.model.fit(state.reshape(1, 6, 7, 1), q_values, verbose=0)
+
 
 class Cnn(Player):
     def __init__(self, env, name='Cnn'):
         super(Cnn, self).__init__(env, name)
 
+        self.LEARNING = True
+        self.LOGGING = False
+        self.CONTINUE_TRAINING = True
+
         self.observation_space = env.observation_space.shape
         self.action_space = env.action_space.n
 
         self.dqn_solver = DQNSolver(self.observation_space, self.action_space)
-        if os.path.exists(f"{self.name.capitalize()}.h5"):
-            self.dqn_solver.load_model(f"{self.name.capitalize()}.h5")
-            self.dqn_solver.exploration_rate = self.dqn_solver.EXPLORATION_MIN
 
-        self.train_set_name = f"cnn_train{random.randint(1, 999)}.csv"
-        print(f"Training set : {self.train_set_name}")
-        self.train_set = open(self.train_set_name, "a+")
+        if self.CONTINUE_TRAINING:
+            if os.path.exists(f"{self.name.capitalize()}.h5"):
+                self.dqn_solver.load_model(f"{self.name.capitalize()}.h5")
+                self.dqn_solver.exploration_rate = self.dqn_solver.EXPLORATION_MIN
+
+        if self.LOGGING:
+            self.train_set_name = f"cnn_train{random.randint(1, 999)}.csv"
+            print(f"Training set : {self.train_set_name}")
+            self.train_set = open(self.train_set_name, "a+")
 
     def get_next_action(self, state: np.ndarray) -> int:
         state = np.reshape(state, [1] + list(self.observation_space))
@@ -118,9 +129,13 @@ class Cnn(Player):
         raise Exception('Unable to determine a valid move! Maybe invoke at the wrong time?')
 
     def learn(self, state, action, state_next, reward, done) -> None:
-        self.train_set.write(' '.join(map(str, state.reshape(42))) + f",{action},{reward}\n")
-        if done:
-            self.train_set.flush()
+        if self.LOGGING:
+            self.train_set.write(' '.join(map(str, state.reshape(42))) + f",{action},{reward}\n")
+            if done:
+                self.train_set.flush()
+
+        if not self.LEARNING:
+            return
 
         state = np.reshape(state, [1] + list(self.observation_space))
         state_next = np.reshape(state_next, [1] + list(self.observation_space))
@@ -132,13 +147,20 @@ class Cnn(Player):
             self.dqn_solver.experience_replay()
 
     def save_model(self, model_prefix: str = None):
+        if not self.LEARNING:
+            return
+
         if model_prefix:
             self.dqn_solver.save_model(model_prefix)
         else:
             self.dqn_solver.save_model(self.name)
 
     def reset(self, episode: int = 0, side: int = 1) -> None:
-        self.train_set.write("NEW ROUND\n")
+        if self.LOGGING:
+            self.train_set.write("NEW ROUND\n")
+
+    def teach(self, state: np.ndarray, action: int, reward: float) -> None:
+        self.dqn_solver.teach(state, action, reward)
 
 
 def game():
