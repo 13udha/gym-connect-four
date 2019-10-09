@@ -101,7 +101,7 @@ class Cnn(Player):
     def __init__(self, env, name='Cnn'):
         super(Cnn, self).__init__(env, name)
 
-        self.LEARNING = True
+        self.LEARNING = False
         self.LOGGING = False
         self.CONTINUE_TRAINING = True
 
@@ -113,7 +113,11 @@ class Cnn(Player):
         if self.CONTINUE_TRAINING:
             if os.path.exists(f"{self.name.capitalize()}.h5"):
                 self.dqn_solver.load_model(f"{self.name.capitalize()}.h5")
-                self.dqn_solver.exploration_rate = self.dqn_solver.EXPLORATION_MIN
+                if self.LEARNING:
+                    self.dqn_solver.exploration_rate = self.dqn_solver.EXPLORATION_MIN
+                else:
+                    self.dqn_solver.exploration_rate = 0
+
 
         if self.LOGGING:
             self.train_set_name = f"cnn_train{random.randint(1, 999)}.csv"
