@@ -167,7 +167,7 @@ def main():
 
     print("Loaded", len(players), "players :", ", ".join([player.name for player in players]))
 
-    tournament(players, save_models=True)
+    tournament(players, save_models=False)
 
 
 if __name__ == "__main__":
