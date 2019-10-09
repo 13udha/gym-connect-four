@@ -7,7 +7,6 @@ import numpy as np
 import os
 import mmap
 
-
 from tqdm import tqdm
 
 from gym_connect_four import RandomPlayer, SavedPlayer, ConnectFourEnv, Player
@@ -23,12 +22,13 @@ def get_num_lines(file_path):
 
 
 class Connect4Moves:
-    def __init__(self):
+    def __init__(self, boost_win_move: float = 0):
         self.board_states = []
         self.actions = []
         self.reward = 0
         self.starting = None
         self.state_list = []
+        self.boost_win_move = boost_win_move
 
     def parse_dump(self, lines: List[str]):
         (board, action, reward) = lines[0].strip().split(',')
@@ -57,11 +57,13 @@ class Connect4Moves:
 
 def teach(player, moves: Connect4Moves):
     for move in moves.state_list:
-        player.teach(move[0], move[1], move[2])
-        # print(move)
+        if moves.reward == 1:
+            player.teach(move[0], move[1], move[2] + moves.boost_win_move)
+        else:
+            player.teach(move[0], move[1], move[2])
 
 
-def run(player, fname):
+def run(player, fname, boost_win_move: float = 0):
     os.chdir(os.path.dirname(__file__))
     # print(os.getcwd())
     with open(fname) as fp:
@@ -70,7 +72,7 @@ def run(player, fname):
         for line in tqdm(fp, total=get_num_lines(fname)):
             if line.strip() == 'NEW ROUND':
                 if match_lines:
-                    moves = Connect4Moves()
+                    moves = Connect4Moves(boost_win_move=boost_win_move)
                     moves.parse_dump(match_lines)
                     teach(player, moves)
                     # rewards[1-reward] += 1
@@ -97,7 +99,14 @@ def main():
 
     files = [f for f in glob.glob("**/*.csv", recursive=True)]
     for f in files:
-        run(player, f"parse/{f}")
+        print(f"Loading {f}")
+        if 'minmax' in f:
+            print("Boosting neutral moves")
+            run(player, f"parser/{f}", 0.2)
+        else:
+            run(player, f"parser/{f}", 0.0)
+
+        player.save_model()
 
     # for f in ['parser/minmax_vs_random_depth3.csv', 'parser/minmax_vs_deedee_train_0.csv', 'parser/minmax_vs_cnn_173.csv']:
     #     run(player, f)
