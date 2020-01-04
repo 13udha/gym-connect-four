@@ -32,6 +32,18 @@ class RandomPlayer(Player):
                 return action
         raise Exception('Unable to determine a valid move! Maybe invoke at the wrong time?')
 
+class LeftiPlayer(Player):
+    def __init__(self, env, name='RandomPlayer'):
+        super(LeftiPlayer, self).__init__(env, name)
+
+    def get_next_action(self, state: np.ndarray) -> int:
+        action = 0
+        for _ in range(10):
+            if self.env.is_valid_action(action):
+                return action
+            action += 1
+        raise Exception('Unable to determine a valid move! Maybe invoke at the wrong time?')
+
 
 class ConnectFourEnv(gym.Env):
     """

@@ -1,9 +1,12 @@
+import sys
+sys.path.append('..\gym-connect-four')
+
 import random
 import warnings
 from collections import deque
 
 import gym
-from gym_connect_four import RandomPlayer, ConnectFourEnv, Player
+from gym_connect_four import LeftiPlayer, RandomPlayer, ConnectFourEnv, Player
 
 import numpy as np
 from keras.layers import Dense, Flatten
@@ -23,6 +26,7 @@ BATCH_SIZE = 20
 EXPLORATION_MAX = 1.0
 EXPLORATION_MIN = 0.01
 EXPLORATION_DECAY = 0.995
+EXPLORATION_GAIN = 1.0025
 
 # Vanilla Multi Layer Perceptron version that starts converging to solution after ~50 runs
 
@@ -64,6 +68,7 @@ class DQNSolver:
             q_values = self.model.predict(state)
             q_values[0][action] = q_update
             self.model.fit(state, q_values, verbose=0)
+        print(reward,batch)
         self.exploration_rate *= EXPLORATION_DECAY
         self.exploration_rate = max(EXPLORATION_MIN, self.exploration_rate)
 
@@ -103,7 +108,8 @@ def game():
     env = gym.make(ENV_NAME)
 
     player = NNPlayer(env, 'NNPlayer')
-    opponent = RandomPlayer(env, 'OpponentRandomPlayer')
+    #opponent = RandomPlayer(env, 'OpponentRandomPlayer')
+    opponent = LeftiPlayer(env, 'LeftiPlayer')
 
     total_reward = 0
     wins = 0
