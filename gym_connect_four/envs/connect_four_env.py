@@ -4,6 +4,9 @@ from typing import Tuple
 import gym
 import numpy as np
 from gym import spaces, logger
+import copy
+
+import random
 
 
 class Player(ABC):
@@ -44,6 +47,53 @@ class LeftiPlayer(Player):
             action += 1
         raise Exception('Unable to determine a valid move! Maybe invoke at the wrong time?')
 
+class MinMaxPlayer(Player):
+    def __init__(self, env, name='MinMaxPlayer'):
+        super(MinMaxPlayer, self).__init__(env, name)
+
+    def get_next_action(self, state: np.ndarray) -> int:
+        actions = self.check_next_actions(self.env,1)
+        return self.find_best_move(actions)
+
+    def check_next_actions(self,env, depth):
+        actions = []
+        for i in range(7): 
+            if self.env.is_valid_action(i):
+                newenv = copy.deepcopy(env)
+                step = newenv.step(i)[1]
+                if step != 0 or depth == 0:
+                    actions.append(step)
+                else:
+                    actions.append(self.check_next_actions(newenv, depth-1))
+            else:
+                actions.append(-1000)
+        return actions
+
+    def find_best_move(self,mmtree):
+        moves = []
+        for elem in mmtree:
+            if isinstance(elem, list): 
+                moves.append(self.go_deeper(elem))
+            else:
+                moves.append(elem)
+        if moves.count(max(moves))==1:
+            return moves.index(max(moves))  
+        else:
+            indices = [i for i, x in enumerate(moves) if x == max(moves)]
+            return random.choice(indices)
+
+    def go_deeper(self,branch):
+        chance = []
+        for elem in branch:
+            if isinstance(elem, list): 
+                chance.append(self.go_deeper(elem))
+            else:
+                if elem != -1000:
+                    chance.append(elem)
+        print(chance)
+        return (sum(chance)/len(chance)) 
+
+    
 
 class ConnectFourEnv(gym.Env):
     """
@@ -127,7 +177,7 @@ class ConnectFourEnv(gym.Env):
         done = False
 
         if not self.is_valid_action(action):
-            print("Invalid action, column is already full")
+            #print("Invalid action, column is already full")
             return self.board, self.LOSS_REWARD, True, {}
 
         # Check and perform action

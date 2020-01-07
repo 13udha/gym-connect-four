@@ -6,7 +6,7 @@ import warnings
 from collections import deque
 
 import gym
-from gym_connect_four import MinMaxPlayer, LeftiPlayer, RandomPlayer, ConnectFourEnv, Player
+from gym_connect_four import LeftiPlayer, RandomPlayer, ConnectFourEnv, Player
 
 import numpy as np
 from keras.layers import Dense, Flatten
@@ -18,7 +18,7 @@ results_path = './results/'
 weights_filename = results_path + 'dqn_weights.h5f'
 
 ENV_NAME = "ConnectFour-v0"
-MAX_RUNS = 1000
+MAX_RUNS = 100
 
 GAMMA = 0.95
 LEARNING_RATE = 0.001
@@ -26,9 +26,9 @@ LEARNING_RATE = 0.001
 MEMORY_SIZE = 1000000
 BATCH_SIZE = 20
 
-EXPLORATION_MAX = 1.0
-EXPLORATION_MIN = 0.01
-EXPLORATION_DECAY = 0.995
+EXPLORATION_MAX = 0
+EXPLORATION_MIN = 0
+EXPLORATION_DECAY = 0
 
 # Vanilla Multi Layer Perceptron version that starts converging to solution after ~50 runs
 
@@ -110,8 +110,7 @@ def game():
 
     player = NNPlayer(env, 'NNPlayer')
     #opponent = RandomPlayer(env, 'OpponentRandomPlayer')
-    #opponent = LeftiPlayer(env, 'LeftiPlayer')
-    opponent = MinMaxPlayer(env, 'MinMaxPlayer')
+    opponent = LeftiPlayer(env, 'LeftiPlayer')
 
     total_reward = 0
     all_rewards = []
@@ -119,6 +118,8 @@ def game():
     losses = 0
     draws = 0
     run = 0
+    player.dqn_solver.model.load_weights(results_path+str(100)+'dqn_weights.h5f')
+
     while True:
         run += 1
         state = env.reset(opponent=opponent, player_color=1)
@@ -130,7 +131,7 @@ def game():
 
             state_next, reward, terminal, info = env.step(action)
 
-            player.learn(state, action, reward, state_next, terminal)
+            #player.learn(state, action, reward, state_next, terminal)
 
             state = state_next
 
@@ -158,13 +159,8 @@ def game():
                 break
         lasthundred = all_rewards[-100:]
 
-        if lasthundred.count(1) == 100:
-            player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
-            break
-
         if run >= MAX_RUNS:
             print(lasthundred.count(1),lasthundred.count(-1),lasthundred.count(0))
-            player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
             break
 
 
