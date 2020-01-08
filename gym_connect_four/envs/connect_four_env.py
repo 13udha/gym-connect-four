@@ -47,24 +47,26 @@ class LeftiPlayer(Player):
             action += 1
         raise Exception('Unable to determine a valid move! Maybe invoke at the wrong time?')
 
+
 class MinMaxPlayer(Player):
     def __init__(self, env, name='MinMaxPlayer'):
         super(MinMaxPlayer, self).__init__(env, name)
 
     def get_next_action(self, state: np.ndarray) -> int:
-        actions = self.check_next_actions(self.env,1)
-        return self.find_best_move(actions)
+        actions = self.check_next_actions(self.env,4)
+        action = self.find_best_move(actions)
+        return action
 
     def check_next_actions(self,env, depth):
         actions = []
         for i in range(7): 
-            if self.env.is_valid_action(i):
+            if env.is_valid_action(i):
                 newenv = copy.deepcopy(env)
-                step = newenv.step(i)[1]
+                step = newenv.opstep(i)[1] 
                 if step != 0 or depth == 0:
                     actions.append(step)
                 else:
-                    actions.append(self.check_next_actions(newenv, depth-1))
+                    actions.append(self.check_next_actions(newenv, depth-1))#TODO check next layer to save computing time
             else:
                 actions.append(-1000)
         return actions
@@ -90,7 +92,6 @@ class MinMaxPlayer(Player):
             else:
                 if elem != -1000:
                     chance.append(elem)
-        print(chance)
         return (sum(chance)/len(chance)) 
 
     
@@ -173,6 +174,51 @@ class ConnectFourEnv(gym.Env):
         return self.board, reward, done, {}
 
     def _step(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
+        reward = self.DEF_REWARD
+        done = False
+
+        if not self.is_valid_action(action):
+            print("Invalid action, column is already full")
+            return self.board, self.LOSS_REWARD, True, {}
+
+        # Check and perform action
+        for index in list(reversed(range(self.board_shape[0]))):
+            if self.board[index][action] == 0:
+                self.board[index][action] = self.current_player
+                break
+
+        self.current_player *= -1
+
+        # Check if board is completely filled
+        if np.count_nonzero(self.board[0]) == self.board_shape[1]:
+            reward = self.DRAW_REWARD
+            done = True
+        else:
+            # Check win condition
+            if self.is_win_state():
+                done = True
+                reward = self.WIN_REWARD
+
+        return self.board, reward, done, {}
+
+    def opstep(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
+        state, reward, done, _ = self._opstep(action)
+
+        if done or not self.opponent:
+            return self.board, reward, done, {}
+
+        if self.current_player != self.player_color:
+            # Run step loop again for the opponent player. State will be the board, but reward is the reverse of the
+            # opponent's reward
+            action_opponent = action
+            new_state, new_reward, new_done, _ = self._opstep(action_opponent)
+            state = new_state
+            reward = self._reverse_reward(new_reward)
+            done = new_done
+
+        return self.board, reward, done, {}
+
+    def _opstep(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
         reward = self.DEF_REWARD
         done = False
 
