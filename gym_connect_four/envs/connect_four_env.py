@@ -5,6 +5,7 @@ import gym
 import numpy as np
 from gym import spaces, logger
 import copy
+from functools import lru_cache
 
 import random
 
@@ -53,20 +54,31 @@ class MinMaxPlayer(Player):
         super(MinMaxPlayer, self).__init__(env, name)
 
     def get_next_action(self, state: np.ndarray) -> int:
-        actions = self.check_next_actions(self.env,4)
+        self.count = 0
+        actions = self.check_next_actions(self.env,2,-1)
+        print(self.count)
         action = self.find_best_move(actions)
         return action
 
-    def check_next_actions(self, env, depth):
+    def check_next_actions(self, env, depth, curr_play):
+        env.current_player = curr_play
+        print("current player: "+str(env.current_player))
         actions = []
-        for i in range(7): 
+        if depth == 0:
+            for i in range(env.board_shape[1]):
+                newenv = copy.deepcopy(env)
+                actions.append(newenv.opstep(i)[1])
+            return actions
+
+        for i in range(env.board_shape[1]):
+            self.count += 1
             if env.is_valid_action(i):
                 newenv = copy.deepcopy(env)
-                step = newenv.opstep(i)[1] 
+                step = newenv.opstep(i)[1]
                 if step != 0 or depth == 0:
                     actions.append(step)
                 else:
-                    actions.append(self.check_next_actions(newenv, depth-1))#TODO check next layer to save computing time
+                    actions.append(self.check_next_actions(newenv, depth-1,(env.current_player*-1)))#TODO check next layer to save computing time
             else:
                 actions.append(-1000)
         return actions
@@ -74,12 +86,12 @@ class MinMaxPlayer(Player):
     def find_best_move(self, mmtree):
         moves = []
         for elem in mmtree:
-            if isinstance(elem, list): 
+            if isinstance(elem, list):
                 moves.append(self.go_deeper(elem))
             else:
                 moves.append(elem)
         if moves.count(max(moves))==1:
-            return moves.index(max(moves))  
+            return moves.index(max(moves))
         else:
             indices = [i for i, x in enumerate(moves) if x == max(moves)]
             return random.choice(indices)
@@ -87,14 +99,14 @@ class MinMaxPlayer(Player):
     def go_deeper(self, branch):
         chance = []
         for elem in branch:
-            if isinstance(elem, list): 
+            if isinstance(elem, list):
                 chance.append(self.go_deeper(elem))
             else:
                 if elem != -1000:
                     chance.append(elem)
-        return (sum(chance)/len(chance)) 
+        return (sum(chance)/len(chance))
 
-    
+
 
 class ConnectFourEnv(gym.Env):
     """
@@ -158,7 +170,6 @@ class ConnectFourEnv(gym.Env):
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
         state, reward, done, _ = self._step(action)
-
         if done or not self.opponent:
             return self.board, reward, done, {}
 
@@ -176,7 +187,6 @@ class ConnectFourEnv(gym.Env):
     def _step(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
         reward = self.DEF_REWARD
         done = False
-
         if not self.is_valid_action(action):
             print("Invalid action, column is already full")
             return self.board, self.LOSS_REWARD, True, {}
@@ -203,10 +213,9 @@ class ConnectFourEnv(gym.Env):
 
     def opstep(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
         state, reward, done, _ = self._opstep(action)
-
         if done or not self.opponent:
             return self.board, reward, done, {}
-
+        
         if self.current_player != self.player_color:
             # Run step loop again for the opponent player. State will be the board, but reward is the reverse of the
             # opponent's reward
@@ -221,7 +230,6 @@ class ConnectFourEnv(gym.Env):
     def _opstep(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
         reward = self.DEF_REWARD
         done = False
-
         if not self.is_valid_action(action):
             #print("Invalid action, column is already full")
             return self.board, self.LOSS_REWARD, True, {}
