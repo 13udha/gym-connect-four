@@ -140,10 +140,10 @@ def game():
 
     #player = NNPlayer(env, 'NNPlayer')
     player = HumanPlayer(env, 'HumanPlayer')
-    opponent = HumanPlayer(env, 'HumanPlayer')
+    #opponent = HumanPlayer(env, 'HumanPlayer')
     #opponent = RandomPlayer(env, 'OpponentRandomPlayer')
     #opponent = LeftiPlayer(env, 'LeftiPlayer')
-    #opponent = MinMaxPlayer(env, 'MinMaxPlayer')
+    opponent = MinMaxPlayer(env, 'MinMaxPlayer')
 
     total_reward = 0
     all_rewards = []

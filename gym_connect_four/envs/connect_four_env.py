@@ -57,7 +57,7 @@ class MinMaxPlayer(Player):
         action = self.find_best_move(actions)
         return action
 
-    def check_next_actions(self,env, depth):
+    def check_next_actions(self, env, depth):
         actions = []
         for i in range(7): 
             if env.is_valid_action(i):
@@ -71,7 +71,7 @@ class MinMaxPlayer(Player):
                 actions.append(-1000)
         return actions
 
-    def find_best_move(self,mmtree):
+    def find_best_move(self, mmtree):
         moves = []
         for elem in mmtree:
             if isinstance(elem, list): 
@@ -84,7 +84,7 @@ class MinMaxPlayer(Player):
             indices = [i for i, x in enumerate(moves) if x == max(moves)]
             return random.choice(indices)
 
-    def go_deeper(self,branch):
+    def go_deeper(self, branch):
         chance = []
         for elem in branch:
             if isinstance(elem, list): 
