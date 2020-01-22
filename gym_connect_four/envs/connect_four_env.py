@@ -5,7 +5,6 @@ import gym
 import numpy as np
 from gym import spaces, logger
 import copy
-from functools import lru_cache
 
 import random
 
@@ -55,14 +54,14 @@ class MinMaxPlayer(Player):
 
     def get_next_action(self, state: np.ndarray) -> int:
         self.count = 0
-        actions = self.check_next_actions(self.env,2,-1)
+        actions = self.check_next_actions(self.env, 2, -1)
         print(self.count)
         action = self.find_best_move(actions)
         return action
 
     def check_next_actions(self, env, depth, curr_play):
         env.current_player = curr_play
-        print("current player: "+str(env.current_player))
+        # print("current player: "+str(env.current_player))
         actions = []
         if depth == 0:
             for i in range(env.board_shape[1]):
@@ -78,7 +77,7 @@ class MinMaxPlayer(Player):
                 if step != 0 or depth == 0:
                     actions.append(step)
                 else:
-                    actions.append(self.check_next_actions(newenv, depth-1,(env.current_player*-1)))#TODO check next layer to save computing time
+                    actions.append(self.check_next_actions(newenv, depth-1,(env.current_player*-1)))  # TODO check next layer to save computing time
             else:
                 actions.append(-1000)
         return actions
@@ -90,10 +89,14 @@ class MinMaxPlayer(Player):
                 moves.append(self.go_deeper(elem))
             else:
                 moves.append(elem)
-        if moves.count(max(moves))==1:
-            return moves.index(max(moves))
+        for i, value in enumerate(moves):
+            if value == 1:
+                return i
+        if moves.count(max(moves)) == 1:
+            a = moves.index(max(moves))
+            return a
         else:
-            indices = [i for i, x in enumerate(moves) if x == max(moves)]
+            indices = [i for i, x in enumerate(moves) if (x == min(moves) and x > -500)]
             return random.choice(indices)
 
     def go_deeper(self, branch):
@@ -215,7 +218,7 @@ class ConnectFourEnv(gym.Env):
         state, reward, done, _ = self._opstep(action)
         if done or not self.opponent:
             return self.board, reward, done, {}
-        
+
         if self.current_player != self.player_color:
             # Run step loop again for the opponent player. State will be the board, but reward is the reverse of the
             # opponent's reward
