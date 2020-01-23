@@ -54,6 +54,9 @@ class MinMaxPlayer(Player):
 
     def get_next_action(self, state: np.ndarray) -> int:
         self.count = 0
+        if(self.check_for_win(self.env) != -1):
+            print('direkt winner')
+            return self.check_for_win(self.env)
         actions = self.check_next_actions(self.env, 2, -1)
         print(self.count)
         action = self.find_best_move(actions)
@@ -82,6 +85,20 @@ class MinMaxPlayer(Player):
                 actions.append(-1000)
         return actions
 
+    def check_for_win(self,env): # TODO check who is who?
+        for i in range(env.board_shape[1]):
+                newenv = copy.deepcopy(env)
+                if(newenv.opstep(i)[1]==1):
+                    #print('minmax?winner: -1 an stelle:'+str(i))
+                    return i
+        for i in range(env.board_shape[1]):
+                newenv = copy.deepcopy(env)
+                newenv.current_player *= -1
+                if(newenv.opstep(i)[1]==1):
+                    #print('gegner?winner: 1 an stelle:'+str(i))
+                    return i
+        return -1
+
     def find_best_move(self, mmtree):
         moves = []
         for elem in mmtree:
@@ -89,14 +106,16 @@ class MinMaxPlayer(Player):
                 moves.append(self.go_deeper(elem))
             else:
                 moves.append(elem)
-        for i, value in enumerate(moves):
-            if value == 1:
-                return i
+        # for i, value in enumerate(moves):
+        #     if value == 1:
+        #         return i
         if moves.count(max(moves)) == 1:
             a = moves.index(max(moves))
+            print(moves,a)
             return a
         else:
-            indices = [i for i, x in enumerate(moves) if (x == min(moves) and x > -500)]
+            indices = [i for i, x in enumerate(moves) if x == max(moves)]
+            print(moves,indices)
             return random.choice(indices)
 
     def go_deeper(self, branch):
