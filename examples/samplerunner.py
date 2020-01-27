@@ -2,6 +2,7 @@ import sys
 sys.path.append('..\gym-connect-four')
 
 import random
+from colorama import init, Fore , Back , Style
 import warnings
 from collections import deque
 
@@ -12,6 +13,9 @@ import numpy as np
 from keras.layers import Dense, Flatten
 from keras.models import Sequential
 from keras.optimizers import Adam
+
+#init colorama
+init()
 
 # from scores.score_logger import ScoreLogger
 results_path = './results/'
@@ -104,13 +108,39 @@ class NNPlayer(Player):
         if not done:
             self.dqn_solver.experience_replay()
 
+class HumanPlayer(Player):
+    def __init__(self, env, name='HumanPlayer'):
+        super(HumanPlayer, self).__init__(env, name)
+
+
+    def get_next_action(self, state: np.ndarray) -> int:
+        for _ in range(10):
+            action = input("Please enter a number between 1 and 7: ")
+            try:
+                action = int(action)
+                if action >=1 and action <= 7:
+                    if self.env.is_valid_action(action-1):
+                        return action - 1
+                    else:
+                        print('That is not a valid action ')
+                else:
+                    print('That was not a number between 1 and 7 ')
+            except ValueError:
+                print('Not a number')    
+        raise Exception('Entered wrong input 10 times')
+
+
+    def learn(self, state, action, reward, state_next, done) -> None:
+        pass
+
 
 def game():
     env = gym.make(ENV_NAME)
 
     player = NNPlayer(env, 'NNPlayer')
+    opponent = HumanPlayer(env, 'HumanPlayer')
     #opponent = RandomPlayer(env, 'OpponentRandomPlayer')
-    opponent = LeftiPlayer(env, 'LeftiPlayer')
+    #opponent = LeftiPlayer(env, 'LeftiPlayer')
 
     total_reward = 0
     all_rewards = []
@@ -118,7 +148,7 @@ def game():
     losses = 0
     draws = 0
     run = 0
-    player.dqn_solver.model.load_weights(results_path+str(100)+'dqn_weights.h5f')
+    player.dqn_solver.model.load_weights(results_path+str(1)+'dqn_weights.h5f')
 
     while True:
         run += 1
@@ -130,7 +160,8 @@ def game():
             action = player.get_next_action(state)
 
             state_next, reward, terminal, info = env.step(action)
-
+            if opponent.name =='HumanPlayer': #TODO if both human print for each turn
+                paint(state)
             #player.learn(state, action, reward, state_next, terminal)
 
             state = state_next
@@ -138,30 +169,52 @@ def game():
             if terminal:
                 total_reward += reward
                 all_rewards.append(reward)
-                print("Run: " + str(run) + ", exploration: " + str(player.dqn_solver.exploration_rate) + ", score: " + str(reward))
+                if player.name=='NNPlayer':
+                    print("Run: " + str(run) + ", exploration: " + str(player.dqn_solver.exploration_rate) + ", score: " + str(reward))
                 if reward == 1:
                     wins +=1
                     print(f"winner: {player.name}")
-                    print("board state:\n", state)
+                    paint(state)
                     print(f"reward={reward}")
                 elif reward == env.LOSS_REWARD:
                     losses += 1
                     print(f"lost to: {opponent.name}")
-                    print("board state:\n", state)
+                    paint(state)
                     print(f"reward={reward}")
                 elif reward == env.DRAW_REWARD:
                     draws += 1
                     print(f"draw after {player.name} move")
-                    print("board state:\n", state)
+                    paint(state)
                     print(f"reward={reward}")
                 print(f"Wins [{wins}], Draws [{draws}], Losses [{losses}] - Total reward {total_reward}, average reward {total_reward/run}") 
                 # score_logger.add_score(step, run)
                 break
         lasthundred = all_rewards[-100:]
 
+        if lasthundred.count(1) == 100:
+            player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
+            break
+
         if run >= MAX_RUNS:
             print(lasthundred.count(1),lasthundred.count(-1),lasthundred.count(0))
+            player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
             break
+
+def paint(board):
+    # Render the environment to the screen
+
+    print(Back.BLUE)
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            if board[i][j]==-1:
+                print('\033[31m' + "\u25CF" , end =" ")
+            elif board[i][j]==1:
+                print('\033[33m' + "\u25CF" , end =" ")
+            else:
+                print('\033[30m' + "\u25CF" , end =" ")
+        print(Style.RESET_ALL + '\x1b[K')
+        print(Back.BLUE, end ="")
+    print(Style.RESET_ALL+'\x1b[K')
 
 
 if __name__ == "__main__":
