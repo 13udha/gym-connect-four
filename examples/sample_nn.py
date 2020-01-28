@@ -5,6 +5,7 @@ import random
 from colorama import init, Fore , Back , Style
 import warnings
 from collections import deque
+import copy
 
 import gym
 from gym_connect_four import MinMaxPlayer, LeftiPlayer, RandomPlayer, ConnectFourEnv, Player
@@ -22,7 +23,7 @@ results_path = './results/'
 weights_filename = results_path + 'dqn_weights.h5f'
 
 ENV_NAME = "ConnectFour-v0"
-MAX_RUNS = 1000
+MAX_RUNS = 100
 
 GAMMA = 0.95
 LEARNING_RATE = 0.001
@@ -103,7 +104,12 @@ class NNPlayer(Player):
         state_next = np.reshape(state_next, [1] + list(self.observation_space))
 
         # reward = reward if not done else -reward
+        # print('remember: ')
+        # print(state, action, reward, state_next, done)
         self.dqn_solver.remember(state, action, reward, state_next, done)
+        # get opponent.action
+        # add reversed state to learn from enemy numpy.negative(state)
+        # check if both same row -> flip stones or put in manually
 
         if not done:
             self.dqn_solver.experience_replay()
@@ -138,8 +144,8 @@ class HumanPlayer(Player):
 def game():
     env = gym.make(ENV_NAME)
 
-    #player = NNPlayer(env, 'NNPlayer')
-    player = HumanPlayer(env, 'HumanPlayer')
+    player = NNPlayer(env, 'NNPlayer')
+    #player = HumanPlayer(env, 'HumanPlayer')
     #opponent = HumanPlayer(env, 'HumanPlayer')
     #opponent = RandomPlayer(env, 'OpponentRandomPlayer')
     #opponent = LeftiPlayer(env, 'LeftiPlayer')
@@ -158,11 +164,12 @@ def game():
         while True:
             step += 1
             # env.render()
+            oldstate = copy.deepcopy(state)
             action = player.get_next_action(state)
             state_next, reward, terminal, info = env.step(action)
-            if player.name =='HumanPlayer': #TODO if both human print for each turn
+            if player.name =='HumanPlayer': #TODO if both human paint for each turn
                 paint(state)
-            player.learn(state, action, reward, state_next, terminal)
+            player.learn(oldstate, action, reward, state_next, terminal)
 
             state = state_next
 

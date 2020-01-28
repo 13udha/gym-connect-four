@@ -58,7 +58,7 @@ class MinMaxPlayer(Player):
         if(direct_win != -1):
             # print('direkt winner')
             return direct_win
-        actions = self.check_next_actions(self.env, 4, -1)
+        actions = self.check_next_actions(self.env, 2, -1)
         # print(self.count)
         action = self.find_best_move(actions)
         return action
