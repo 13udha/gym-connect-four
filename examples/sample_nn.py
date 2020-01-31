@@ -23,7 +23,7 @@ results_path = './results/'
 weights_filename = results_path + 'dqn_weights.h5f'
 
 ENV_NAME = "ConnectFour-v0"
-MAX_RUNS = 100
+MAX_RUNS = 1
 
 GAMMA = 0.95
 LEARNING_RATE = 0.001
@@ -85,6 +85,8 @@ class NNPlayer(Player):
 
         self.observation_space = env.observation_space.shape
         self.action_space = env.action_space.n
+        self.last_move = -1
+        self.enemie_move = -1
 
         self.dqn_solver = DQNSolver(self.observation_space, self.action_space)
 
@@ -109,10 +111,24 @@ class NNPlayer(Player):
         self.dqn_solver.remember(state, action, reward, state_next, done)
         # get opponent.action
         # add reversed state to learn from enemy numpy.negative(state)
-        # check if both same row -> flip stones or put in manually
-
+        # check if both same row -> flip stones or put in manually !!!!vllt auch nicht
+        # use last action from enemie with current action from NNPlayer and flip it all to learn from enemie
+        self.last_move = action
+        tmp = self.get_emove(state,state_next)
+        print(tmp)
         if not done:
             self.dqn_solver.experience_replay()
+
+    def get_emove(self, state, state_next):
+        last_moves = state_next-state
+        # print(last_moves)
+        # np.where(last_moves[last_moves==1],0,last_moves)
+        for i in range(0, self.env.board_shape[0]):
+            if (-1 in last_moves[0][i]):
+                print('found')
+                return np.where(last_moves[0][i]==-1) #TODO cast to int?
+            print(last_moves[0][i])
+        return -1 #TODO
 
 class HumanPlayer(Player):
     def __init__(self, env, name='HumanPlayer'):
@@ -166,7 +182,7 @@ def game():
             # env.render()
             oldstate = copy.deepcopy(state)
             action = player.get_next_action(state)
-            state_next, reward, terminal, info = env.step(action)
+            state_next, reward, terminal, info = env.step(action) # hier die opponent.action holen
             if player.name =='HumanPlayer': #TODO if both human paint for each turn
                 paint(state)
             player.learn(oldstate, action, reward, state_next, terminal)
