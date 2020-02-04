@@ -35,6 +35,8 @@ EXPLORATION_MAX = 1.0
 EXPLORATION_MIN = 0.01
 EXPLORATION_DECAY = 0.995
 
+learn_from_enemy = False
+
 # Vanilla Multi Layer Perceptron version that starts converging to solution after ~50 runs
 
 
@@ -113,21 +115,20 @@ class NNPlayer(Player):
         # add reversed state to learn from enemy numpy.negative(state)
         # check if both same row -> flip stones or put in manually !!!!vllt auch nicht
         # use last action from enemie with current action from NNPlayer and flip it all to learn from enemie
-        self.last_move = action
-        tmp = self.get_emove(state,state_next)
-        print(tmp)
+        if (learn_from_enemy){
+            self.last_move = action
+            self.enemie_move = self.get_emove(state,state_next) #TODO use this
+        }
+
+
         if not done:
             self.dqn_solver.experience_replay()
 
     def get_emove(self, state, state_next):
         last_moves = state_next-state
-        # print(last_moves)
-        # np.where(last_moves[last_moves==1],0,last_moves)
         for i in range(0, self.env.board_shape[0]):
             if (-1 in last_moves[0][i]):
-                print('found')
-                return np.where(last_moves[0][i]==-1) #TODO cast to int?
-            print(last_moves[0][i])
+                return int(np.where(last_moves[0][i]==-1)[0])
         return -1 #TODO
 
 class HumanPlayer(Player):
@@ -148,7 +149,7 @@ class HumanPlayer(Player):
                 else:
                     print('That was not a number between 1 and 7 ')
             except ValueError:
-                print('Not a number')    
+                print('Not a number')
         raise Exception('Entered wrong input 10 times')
 
 
@@ -209,7 +210,7 @@ def game():
                     print(f"draw after {player.name} move")
                     paint(state)
                     print(f"reward={reward}")
-                print(f"Wins [{wins}], Draws [{draws}], Losses [{losses}] - Total reward {total_reward}, average reward {total_reward/run}") 
+                print(f"Wins [{wins}], Draws [{draws}], Losses [{losses}] - Total reward {total_reward}, average reward {total_reward/run}")
                 # score_logger.add_score(step, run)
                 break
         lasthundred = all_rewards[-100:]
