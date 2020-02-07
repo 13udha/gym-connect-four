@@ -35,7 +35,7 @@ EXPLORATION_MAX = 1.0
 EXPLORATION_MIN = 0.01
 EXPLORATION_DECAY = 0.995
 
-learn_from_enemy = False
+learn_from_enemy = True
 
 # Vanilla Multi Layer Perceptron version that starts converging to solution after ~50 runs
 
@@ -115,19 +115,40 @@ class NNPlayer(Player):
         # add reversed state to learn from enemy numpy.negative(state)
         # check if both same row -> flip stones or put in manually !!!!vllt auch nicht
         # use last action from enemie with current action from NNPlayer and flip it all to learn from enemie
-        if (learn_from_enemy){
-            self.last_move = action
-            self.enemie_move = self.get_emove(state,state_next) #TODO use this
-        }
+        if (learn_from_enemy and self.last_move != -1):
+            # print('entered')
+            print('errechnet',self.enemie_move)
+            reward = reward*(-1)
+            print('state',state)
+            # print('last move', self.last_move)
+            print('highest pos',self.get_highest_pos(state,self.enemie_move)) # Bugged
+            # print('pre',state[0][self.get_highest_pos(state,self.last_move)][self.last_move])
+            state[0][self.get_highest_pos(state,self.enemie_move)][self.enemie_move] = 0 #TODO enemie_move Bugged
+            # print('post',state[0][self.get_highest_pos(state,self.last_move)][self.last_move])
+            nega_state = np.negative(state)
+            # print(state)
+            print('nega',nega_state)
+            # print('nega after',nega_state) # TODO moves back in
+            # a = [[1,0,0,0,0],[1,1,0,0,0],[1,1,1,0,0],[1,1,1,1,0]] just for debug
+
+        self.enemie_move = self.get_emove(state,state_next) #TODO use this #### first round TODO
+
+        self.last_move = action
 
 
         if not done:
             self.dqn_solver.experience_replay()
 
+    def get_highest_pos(self, state, row):
+        for i in range(0, len(state[0])):
+            if (state[0][i][row]!=0):
+                return i
+        return -1 # row empty
+
     def get_emove(self, state, state_next):
         last_moves = state_next-state
         for i in range(0, self.env.board_shape[0]):
-            if (-1 in last_moves[0][i]):
+            if (-1 in last_moves[0][i]): # works only if enemie always -1
                 return int(np.where(last_moves[0][i]==-1)[0])
         return -1 #TODO
 
