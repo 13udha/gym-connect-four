@@ -23,7 +23,7 @@ results_path = './results/'
 weights_filename = results_path + 'dqn_weights.h5f'
 
 ENV_NAME = "ConnectFour-v0"
-MAX_RUNS = 1
+MAX_RUNS = 100
 
 GAMMA = 0.95
 LEARNING_RATE = 0.001
@@ -108,31 +108,25 @@ class NNPlayer(Player):
         state_next = np.reshape(state_next, [1] + list(self.observation_space))
 
         # reward = reward if not done else -reward
-        # print('remember: ')
-        # print(state, action, reward, state_next, done)
+
         self.dqn_solver.remember(state, action, reward, state_next, done)
-        # get opponent.action
-        # add reversed state to learn from enemy numpy.negative(state)
-        # check if both same row -> flip stones or put in manually !!!!vllt auch nicht
-        # use last action from enemie with current action from NNPlayer and flip it all to learn from enemie
-        if (learn_from_enemy and self.last_move != -1):
-            # print('entered')
-            print('errechnet',self.enemie_move)
+
+        if (learn_from_enemy and self.last_move != -1): # works only if enemie always -1
             reward = reward*(-1)
-            print('state',state)
-            # print('last move', self.last_move)
-            print('highest pos',self.get_highest_pos(state,self.enemie_move)) # Bugged
-            # print('pre',state[0][self.get_highest_pos(state,self.last_move)][self.last_move])
-            state[0][self.get_highest_pos(state,self.enemie_move)][self.enemie_move] = 0 #TODO enemie_move Bugged
-            # print('post',state[0][self.get_highest_pos(state,self.last_move)][self.last_move])
+            pos =self.get_highest_pos(state,self.enemie_move)
+            state[0][pos][self.enemie_move] = 0
             nega_state = np.negative(state)
-            # print(state)
-            print('nega',nega_state)
-            # print('nega after',nega_state) # TODO moves back in
-            # a = [[1,0,0,0,0],[1,1,0,0,0],[1,1,1,0,0],[1,1,1,1,0]] just for debug
+            nega_state_next =  copy.deepcopy(nega_state)
+            nega_state_next[0][pos][self.enemie_move] = 1
+            nega_pos =self.get_highest_pos(nega_state_next,action)
+            nega_state_next[0][nega_pos-1][action] = -1
 
-        self.enemie_move = self.get_emove(state,state_next) #TODO use this #### first round TODO
+            state[0][pos][self.enemie_move] = -1 # restore state
 
+            self.dqn_solver.remember(nega_state, self.enemie_move, reward, nega_state_next, False) # Last move fehlt
+
+
+        self.enemie_move = self.get_emove(state,state_next) #first round fehlt
         self.last_move = action
 
 
@@ -148,7 +142,7 @@ class NNPlayer(Player):
     def get_emove(self, state, state_next):
         last_moves = state_next-state
         for i in range(0, self.env.board_shape[0]):
-            if (-1 in last_moves[0][i]): # works only if enemie always -1
+            if (-1 in last_moves[0][i]):
                 return int(np.where(last_moves[0][i]==-1)[0])
         return -1 #TODO
 
