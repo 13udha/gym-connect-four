@@ -204,6 +204,7 @@ def game():
             state_next, reward, terminal, info = env.step(action) # hier die opponent.action holen
             if player.name =='HumanPlayer': #TODO if both human paint for each turn
                 paint(state)
+            # TODO reward mit steps
             player.learn(oldstate, action, reward, state_next, terminal)
 
             state = state_next
@@ -244,7 +245,7 @@ def game():
     plt.plot(all_rewards)
     plt.ylabel('Reward')
     plt.xlabel('Episode')
-    plt.show()
+    # plt.show()
     plt.savefig(plot_filename)
 
 

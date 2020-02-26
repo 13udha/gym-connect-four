@@ -153,7 +153,7 @@ class ConnectFourEnv(gym.Env):
 
     LOSS_REWARD = -1
     DEF_REWARD = 0
-    DRAW_REWARD = 0.5
+    DRAW_REWARD = 0
     WIN_REWARD = 1
 
     def __init__(self, board_shape=(6, 7)):
