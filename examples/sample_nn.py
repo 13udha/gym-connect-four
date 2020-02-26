@@ -6,6 +6,7 @@ from colorama import init, Fore , Back , Style
 import warnings
 from collections import deque
 import copy
+import matplotlib.pyplot as plt
 
 import gym
 from gym_connect_four import MinMaxPlayer, LeftiPlayer, RandomPlayer, ConnectFourEnv, Player
@@ -19,11 +20,13 @@ from keras.optimizers import Adam
 init()
 
 # from scores.score_logger import ScoreLogger
+# TODO bessere Pfade für genaue files
 results_path = './results/'
 weights_filename = results_path + 'dqn_weights.h5f'
+plot_filename = results_path + 'reward_plot.png'
 
 ENV_NAME = "ConnectFour-v0"
-MAX_RUNS = 100
+MAX_RUNS = 5
 
 GAMMA = 0.95
 LEARNING_RATE = 0.001
@@ -238,6 +241,12 @@ def game():
             print(lasthundred.count(1),lasthundred.count(-1),lasthundred.count(0))
             player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
             break
+    plt.plot(all_rewards)
+    plt.ylabel('Reward')
+    plt.xlabel('Episode')
+    plt.show()
+    plt.savefig(plot_filename)
+
 
 def paint(board):
     # Render the environment to the screen

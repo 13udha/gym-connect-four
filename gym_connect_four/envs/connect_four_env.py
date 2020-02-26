@@ -56,16 +56,13 @@ class MinMaxPlayer(Player):
         self.count = 0
         direct_win = self.check_for_win(self.env)
         if(direct_win != -1):
-            # print('direkt winner')
             return direct_win
         actions = self.check_next_actions(self.env, 2, -1)
-        # print(self.count)
         action = self.find_best_move(actions)
         return action
 
     def check_next_actions(self, env, depth, curr_play):
         env.current_player = curr_play
-        # print("current player: "+str(env.current_player))
         actions = []
         if depth == 0:
             for i in range(env.board_shape[1]):
@@ -90,13 +87,11 @@ class MinMaxPlayer(Player):
         for i in range(env.board_shape[1]):
             newenv = copy.deepcopy(env)
             if(newenv._step(i)[1] == 1):
-                # print('minmax?winner: -1 an stelle:'+str(i))
                 return i
         for i in range(env.board_shape[1]):
             newenv = copy.deepcopy(env)
             newenv.current_player *= -1
             if(newenv._step(i)[1] == 1):
-                # print('gegner?winner: 1 an stelle:'+str(i))
                 return i
         return -1
 
@@ -107,16 +102,11 @@ class MinMaxPlayer(Player):
                 moves.append(self.go_deeper(elem))
             else:
                 moves.append(elem)
-        # for i, value in enumerate(moves):
-        #     if value == 1:
-        #         return i
         if moves.count(max(moves)) == 1:
             a = moves.index(max(moves))
-            # print(moves,a)
             return a
         else:
             indices = [i for i, x in enumerate(moves) if x == max(moves)]
-            # print(moves,indices)
             return random.choice(indices)
 
     def go_deeper(self, branch):
@@ -211,7 +201,6 @@ class ConnectFourEnv(gym.Env):
         reward = self.DEF_REWARD
         done = False
         if not self.is_valid_action(action):
-            # print("Invalid action, column is already full")
             return self.board, self.LOSS_REWARD, True, {}
 
         # Check and perform action
