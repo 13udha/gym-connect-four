@@ -39,6 +39,7 @@ EXPLORATION_MIN = 0.01
 EXPLORATION_DECAY = 0.995
 
 learn_from_enemy = True
+better_reward = True
 
 # Vanilla Multi Layer Perceptron version that starts converging to solution after ~50 runs
 
@@ -205,6 +206,9 @@ def game():
             if player.name =='HumanPlayer': #TODO if both human paint for each turn
                 paint(state)
             # TODO reward mit steps
+            if(better_reward and step>= 4):
+                reward = reward/(step-3)
+
             player.learn(oldstate, action, reward, state_next, terminal)
 
             state = state_next
@@ -214,12 +218,12 @@ def game():
                 all_rewards.append(reward)
                 if player.name=='NNPlayer':
                     print("Run: " + str(run) + ", exploration: " + str(player.dqn_solver.exploration_rate) + ", score: " + str(reward))
-                if reward == 1:
+                if reward > 0:
                     wins +=1
                     print(f"winner: {player.name}")
                     paint(state)
                     print(f"reward={reward}")
-                elif reward == env.LOSS_REWARD:
+                elif reward < 0:
                     losses += 1
                     print(f"lost to: {opponent.name}")
                     paint(state)
@@ -233,7 +237,7 @@ def game():
                 # score_logger.add_score(step, run)
                 break
         lasthundred = all_rewards[-100:]
-
+        # TODO ist nicht mehr nur 1 und -1
         if lasthundred.count(1) == 100:
             player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
             break
@@ -242,7 +246,7 @@ def game():
             print(lasthundred.count(1),lasthundred.count(-1),lasthundred.count(0))
             player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
             break
-    plt.plot(all_rewards)
+    plt.plot(all_rewards, 'ro')
     plt.ylabel('Reward')
     plt.xlabel('Episode')
     # plt.show()
