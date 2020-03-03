@@ -22,8 +22,8 @@ init()
 # from scores.score_logger import ScoreLogger
 # TODO bessere Pfade für genaue files
 results_path = './results/'
-weights_filename = results_path + 'dqn_weights.h5f'
-plot_filename = results_path + 'reward_plot.png'
+# weights_filename = results_path + 'dqn_weights.h5f'
+# plot_filename = results_path + 'reward_plot.png'
 
 ENV_NAME = "ConnectFour-v0"
 MAX_RUNS = 5
@@ -31,7 +31,7 @@ MAX_RUNS = 5
 GAMMA = 0.95
 LEARNING_RATE = 0.001
 
-MEMORY_SIZE = 1000000
+MEMORY_SIZE = 100000
 BATCH_SIZE = 20
 
 EXPLORATION_MAX = 1.0
@@ -177,15 +177,15 @@ class HumanPlayer(Player):
 
 
 
-def game():
-    env = gym.make(ENV_NAME)
+def game(opponent, env, name):
+    # env = gym.make(ENV_NAME)
 
     player = NNPlayer(env, 'NNPlayer')
     #player = HumanPlayer(env, 'HumanPlayer')
     #opponent = HumanPlayer(env, 'HumanPlayer')
     #opponent = RandomPlayer(env, 'OpponentRandomPlayer')
     #opponent = LeftiPlayer(env, 'LeftiPlayer')
-    opponent = MinMaxPlayer(env, 'MinMaxPlayer')
+    # opponent = MinMaxPlayer(env, 'MinMaxPlayer',f=0.00001)
 
     total_reward = 0
     all_rewards = []
@@ -238,19 +238,19 @@ def game():
                 break
         lasthundred = all_rewards[-100:]
         # TODO ist nicht mehr nur 1 und -1
-        if lasthundred.count(1) == 100:
-            player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
-            break
+        # if lasthundred.count(1) == 100:
+        #     player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
+        #     break
 
         if run >= MAX_RUNS:
-            print(lasthundred.count(1),lasthundred.count(-1),lasthundred.count(0))
-            player.dqn_solver.model.save_weights(results_path+str(lasthundred.count(1))+'dqn_weights.h5f')
+            # print(lasthundred.count(1),lasthundred.count(-1),lasthundred.count(0))
+            player.dqn_solver.model.save_weights(results_path+name+'lh'+str(lasthundred.count(1))+'dqn_weights.h5f')
             break
     plt.plot(all_rewards, 'ro')
     plt.ylabel('Reward')
     plt.xlabel('Episode')
     # plt.show()
-    plt.savefig(plot_filename)
+    plt.savefig(results_path +name+ 'reward_plot.png')
 
 
 def paint(board):
@@ -273,4 +273,27 @@ def paint(board):
 if __name__ == "__main__":
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        game()
+        env = gym.make(ENV_NAME)
+        learn_from_enemy = False
+        better_reward = False
+        game(RandomPlayer(env, 'OpponentRandomPlayer'),env,'RandomFF')
+        better_reward = True
+        game(RandomPlayer(env, 'OpponentRandomPlayer'),env,'RandomTF')
+        better_reward = False
+        game(LeftiPlayer(env, 'LeftiPlayer'),env,'LeftiFF')
+        better_reward = True
+        game(LeftiPlayer(env, 'LeftiPlayer'),env,'LeftiTF')
+        learn_from_enemy= True
+        game(RandomPlayer(env, 'OpponentRandomPlayer'),env,'RandomTT')
+        game(LeftiPlayer(env, 'LeftiPlayer'),env,'LeftiTT')
+
+        opponents = [
+            MinMaxPlayer(env, 'MinMaxPlayer',f=0.0001),
+            MinMaxPlayer(env, 'MinMaxPlayer',f=0.001),
+            MinMaxPlayer(env, 'MinMaxPlayer',f=0.01),
+            MinMaxPlayer(env, 'MinMaxPlayer',f=0.1),
+            MinMaxPlayer(env, 'MinMaxPlayer',f=1),
+            MinMaxPlayer(env, 'MinMaxPlayer',f=10),
+            ]
+        for opponent in opponents:
+            game(opponent, env,'MM'+str(opponent.f))

@@ -4,6 +4,7 @@ from typing import Tuple
 import gym
 import numpy as np
 from gym import spaces, logger
+from .prob_choice import probChoice
 import copy
 
 import random
@@ -49,8 +50,9 @@ class LeftiPlayer(Player):
 
 
 class MinMaxPlayer(Player):
-    def __init__(self, env, name='MinMaxPlayer'):
+    def __init__(self, env, name='MinMaxPlayer',f=None):
         super(MinMaxPlayer, self).__init__(env, name)
+        self.f = f
 
     def get_next_action(self, state: np.ndarray) -> int:
         self.count = 0
@@ -102,12 +104,13 @@ class MinMaxPlayer(Player):
                 moves.append(self.go_deeper(elem))
             else:
                 moves.append(elem)
-        if moves.count(max(moves)) == 1:
-            a = moves.index(max(moves))
-            return a
-        else:
-            indices = [i for i, x in enumerate(moves) if x == max(moves)]
-            return random.choice(indices)
+        return probChoice(moves,f=self.f)
+        # if moves.count(max(moves)) == 1:
+        #     a = moves.index(max(moves))
+        #     return a
+        # else:
+        #     indices = [i for i, x in enumerate(moves) if x == max(moves)]
+        #     return random.choice(indices)
 
     def go_deeper(self, branch):
         chance = []
