@@ -266,7 +266,7 @@ def game(opponent, env, name, paint_board=False):
             break
     plt.clf()
     pickle.dump( all_rewards, open( results_path+name+'all'+"save.p", "wb" ) )
-    plt.plot(all_rewards, 'ro')
+    plt.plot(all_rewards, 'ro' ,markersize=2)
     plt.ylabel('Reward')
     plt.xlabel('Episode')
     # plt.show()
@@ -274,7 +274,7 @@ def game(opponent, env, name, paint_board=False):
 
     plt.clf()
     pickle.dump( average_rewards, open( results_path+name+'average'+"save.p", "wb" ) )
-    plt.plot(average_rewards, 'ro')
+    plt.plot(average_rewards, 'ro' ,markersize=2)
     plt.ylabel('Reward')
     plt.xlabel('Episode')
     # plt.show()
