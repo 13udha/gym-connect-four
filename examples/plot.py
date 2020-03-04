@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
 results_path = './results/'
 plot_filename = results_path + 'reward_plot.png'
@@ -15,5 +16,8 @@ plt.plot(21,0,'o',markersize=2)
 plt.xlabel('Züge')
 plt.ylabel('Reward')
 plt.xticks(np.arange(4, 22, step=1))
-# plt.show()
+plt.show()
 plt.savefig(plot_filename)
+average_reward = reward_function
+pickle.dump( average_reward, open( results_path+"save.p", "wb" ) )
+average_reward = pickle.load( open( results_path+"save.p", "rb" ) )

@@ -7,6 +7,7 @@ import warnings
 from collections import deque
 import copy
 import matplotlib.pyplot as plt
+import pickle
 
 import gym
 from gym_connect_four import MinMaxPlayer, LeftiPlayer, RandomPlayer, ConnectFourEnv, Player
@@ -26,7 +27,7 @@ results_path = './results/'
 # plot_filename = results_path + 'reward_plot.png'
 
 ENV_NAME = "ConnectFour-v0"
-MAX_RUNS = 5
+MAX_RUNS = 1000
 
 GAMMA = 0.95
 LEARNING_RATE = 0.001
@@ -102,6 +103,9 @@ class NNPlayer(Player):
             action = self.dqn_solver.act(state, self.env.available_moves())
             if self.env.is_valid_action(action):
                 return action
+        for i in range(env.board_shape[1]):
+            if env.is_valid_action(i):
+                return i
         print("Can't determine next action")
         print(f"Board is {state}")
         print(f"My last intended action is {action}")
@@ -177,7 +181,7 @@ class HumanPlayer(Player):
 
 
 
-def game(opponent, env, name):
+def game(opponent, env, name, paint_board=False):
     # env = gym.make(ENV_NAME)
 
     player = NNPlayer(env, 'NNPlayer')
@@ -189,6 +193,7 @@ def game(opponent, env, name):
 
     total_reward = 0
     all_rewards = []
+    average_rewards = []
     wins = 0
     losses = 0
     draws = 0
@@ -214,28 +219,41 @@ def game(opponent, env, name):
             state = state_next
 
             if terminal:
-                total_reward += reward
-                all_rewards.append(reward)
-                if player.name=='NNPlayer':
-                    print("Run: " + str(run) + ", exploration: " + str(player.dqn_solver.exploration_rate) + ", score: " + str(reward))
-                if reward > 0:
-                    wins +=1
-                    print(f"winner: {player.name}")
-                    paint(state)
-                    print(f"reward={reward}")
-                elif reward < 0:
-                    losses += 1
-                    print(f"lost to: {opponent.name}")
-                    paint(state)
-                    print(f"reward={reward}")
-                elif reward == env.DRAW_REWARD:
-                    draws += 1
-                    print(f"draw after {player.name} move")
-                    paint(state)
-                    print(f"reward={reward}")
-                print(f"Wins [{wins}], Draws [{draws}], Losses [{losses}] - Total reward {total_reward}, average reward {total_reward/run}")
-                # score_logger.add_score(step, run)
-                break
+                if paint_board:
+                    total_reward += reward
+                    all_rewards.append(reward)
+                    if player.name=='NNPlayer':
+                        print("Run: " + str(run) + ", exploration: " + str(player.dqn_solver.exploration_rate) + ", score: " + str(reward))
+                    if reward > 0:
+                        wins +=1
+                        print(f"winner: {player.name}")
+                        paint(state)
+                        print(f"reward={reward}")
+                    elif reward < 0:
+                        losses += 1
+                        print(f"lost to: {opponent.name}")
+                        paint(state)
+                        print(f"reward={reward}")
+                    elif reward == env.DRAW_REWARD:
+                        draws += 1
+                        print(f"draw after {player.name} move")
+                        paint(state)
+                        print(f"reward={reward}")
+                    print(f"Wins [{wins}], Draws [{draws}], Losses [{losses}] - Total reward {total_reward}, average reward {total_reward/run}")
+                    average_rewards.append(total_reward/run)
+                    # score_logger.add_score(step, run)
+                    break
+                else:
+                    total_reward += reward
+                    all_rewards.append(reward)
+                    if reward > 0:
+                        wins +=1
+                    elif reward < 0:
+                        losses += 1
+                    elif reward == env.DRAW_REWARD:
+                        draws += 1
+                    average_rewards.append(total_reward/run)
+                    break
         lasthundred = all_rewards[-100:]
         # TODO ist nicht mehr nur 1 und -1
         # if lasthundred.count(1) == 100:
@@ -246,12 +264,20 @@ def game(opponent, env, name):
             # print(lasthundred.count(1),lasthundred.count(-1),lasthundred.count(0))
             player.dqn_solver.model.save_weights(results_path+name+'lh'+str(lasthundred.count(1))+'dqn_weights.h5f')
             break
+    pickle.dump( all_rewards, open( results_path+name+'all'+"save.p", "wb" ) )
     plt.plot(all_rewards, 'ro')
     plt.ylabel('Reward')
     plt.xlabel('Episode')
     # plt.show()
-    plt.savefig(results_path +name+ 'reward_plot.png')
+    plt.savefig(results_path +name+'all'+ 'reward_plot.png')
 
+    plt.clf()
+    pickle.dump( average_rewards, open( results_path+name+'average'+"save.p", "wb" ) )
+    plt.plot(average_rewards, 'ro')
+    plt.ylabel('Reward')
+    plt.xlabel('Episode')
+    # plt.show()
+    plt.savefig(results_path +name+'average'+ 'reward_plot.png')
 
 def paint(board):
     # Render the environment to the screen
@@ -288,12 +314,13 @@ if __name__ == "__main__":
         game(LeftiPlayer(env, 'LeftiPlayer'),env,'LeftiTT')
 
         opponents = [
-            MinMaxPlayer(env, 'MinMaxPlayer',f=0.0001),
             MinMaxPlayer(env, 'MinMaxPlayer',f=0.001),
             MinMaxPlayer(env, 'MinMaxPlayer',f=0.01),
             MinMaxPlayer(env, 'MinMaxPlayer',f=0.1),
             MinMaxPlayer(env, 'MinMaxPlayer',f=1),
             MinMaxPlayer(env, 'MinMaxPlayer',f=10),
+            MinMaxPlayer(env, 'MinMaxPlayer',f=100),
             ]
         for opponent in opponents:
             game(opponent, env,'MM'+str(opponent.f))
+
