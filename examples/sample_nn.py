@@ -314,12 +314,12 @@ if __name__ == "__main__":
         game(LeftiPlayer(env, 'LeftiPlayer'),env,'LeftiTT')
 
         opponents = [
+            MinMaxPlayer(env, 'MinMaxPlayer',f=0.0001),
             MinMaxPlayer(env, 'MinMaxPlayer',f=0.001),
             MinMaxPlayer(env, 'MinMaxPlayer',f=0.01),
             MinMaxPlayer(env, 'MinMaxPlayer',f=0.1),
             MinMaxPlayer(env, 'MinMaxPlayer',f=1),
             MinMaxPlayer(env, 'MinMaxPlayer',f=10),
-            MinMaxPlayer(env, 'MinMaxPlayer',f=100),
             ]
         for opponent in opponents:
             game(opponent, env,'MM'+str(opponent.f))
