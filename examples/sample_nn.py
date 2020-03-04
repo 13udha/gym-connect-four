@@ -264,6 +264,7 @@ def game(opponent, env, name, paint_board=False):
             # print(lasthundred.count(1),lasthundred.count(-1),lasthundred.count(0))
             player.dqn_solver.model.save_weights(results_path+name+'lh'+str(lasthundred.count(1))+'dqn_weights.h5f')
             break
+    plt.clf()
     pickle.dump( all_rewards, open( results_path+name+'all'+"save.p", "wb" ) )
     plt.plot(all_rewards, 'ro')
     plt.ylabel('Reward')
@@ -278,6 +279,7 @@ def game(opponent, env, name, paint_board=False):
     plt.xlabel('Episode')
     # plt.show()
     plt.savefig(results_path +name+'average'+ 'reward_plot.png')
+    plt.clf()
 
 def paint(board):
     # Render the environment to the screen
