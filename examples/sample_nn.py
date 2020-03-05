@@ -253,6 +253,7 @@ def game(opponent, env, name, paint_board=False):
                     elif reward == env.DRAW_REWARD:
                         draws += 1
                     average_rewards.append(total_reward/run)
+                    print(run)
                     break
         lasthundred = all_rewards[-100:]
         # TODO ist nicht mehr nur 1 und -1

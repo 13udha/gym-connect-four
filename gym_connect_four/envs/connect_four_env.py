@@ -120,7 +120,7 @@ class MinMaxPlayer(Player):
             else:
                 if elem != -1000:
                     chance.append(elem)
-        return (sum(chance)/len(chance))
+        return (sum(chance)/len(chance)) if len(chance) != 0 else 0
 
 
 
